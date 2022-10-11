@@ -1,34 +1,149 @@
-const fs = require('fs');
-const generatePage = require('./src/page-template.js');
+const inquirer = require('inquirer');
+// const fs = require('fs');
+// const generatePage = require('./src/page-template');
 
-const profileDataArgs = process.argv.slice(2);
-// console.log(profileDataArgs);
+// const pageHTML = generatePage(name, github);
 
-const [name, github] = profileDataArgs;
+// fs.writeFile('./index.html', pageHTML, err => {
+//     if (err) throw err;
 
-
-fs.writeFile('index.html', generatePage(name, github), err => {
-    if (err) throw new Error(err);
-
-    console.log('Portfolio complete! Checkout index.html to see the output!');
-});
+//     console.log('Portfolio complete! Checkout index.html to see the output!');
+// });
 
 
+// Here I'm calling a function that returns the results of 'inquire.prompt', which is a Promise. We append the '.then()' method into the function call since it returns a Promise. We put into '.then()' whatever we wish to take place after the Promise is resolved. 
+const promptUser = () => {
+    return inquirer.prompt([
+        {
+            type: 'input',
+            name: 'name',
+            message: 'What is your name?',
+            validate: nameInput => {
+                if (nameInput) {
+                    return true;
+                } else {
+                    console.log('Please enter your name!');
+                    return false;
+                }
+            }
+        }, 
+        {
+            type: 'input',
+            name: 'github',
+            message: 'Enter your GitHub Username:', 
+            validate: githubInput => {
+                if (githubInput) {
+                    return true;
+                } else {
+                    console.log('Please enter your GitHub username!');
+                    return false;
+                }
+            }
+        }, 
+        {
+            type: 'confirm', 
+            name: 'confirmAbout', 
+            message: 'Would you like to enter some information about yourself for an "About" section?',
+            default: true
+        },
+        {
+            type: 'input',
+            name: 'about',
+            message: 'Provide some information about yourself:', 
+            when: ({ confirmAbout }) => {
+                if (confirmAbout) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        }
+    ]);
+};
 
 
 
+const promptProject = portfolioData => {
+    // if there's no 'projects' array property, create one
+    if (!portfolioData.projects) {
+        portfolioData.projects = [];
+    };
+    console.log(`
+=================
+Add a New Project
+=================
+`);
+    return inquirer.prompt([
+        {
+            type: 'input',
+            name: 'name',
+            message: 'What is the name of your project?', 
+            validate: nameInput => {
+                if (nameInput) {
+                    return true;
+                } else {
+                    console.log('Please enter the name of your project!');
+                    return false;
+                }
+            }
+        },
+        {
+            type: 'input',
+            name: 'description',
+            message: 'Provide a description of the project. (Required)', 
+            validate: descriptionInput => {
+                if (descriptionInput) {
+                    return true;
+                } else {
+                    console.log('Please describe your project!');
+                    return false;
+                }
+            }
+        },
+        {
+            type: 'checkbox',
+            name: 'languages',
+            message: 'What did you build this project with? (Check all that apply)',
+            choices: ['JavaScript', 'HTML', 'CSS', 'ES6', 'jQuery', 'Bootstrap', 'Node']
+        },
+        {
+            type: 'input',
+            name: 'link',
+            message: 'Enter the GitHub link to your project. (Required)', 
+            validate: linkInput => {
+                if (linkInput) {
+                    return true;
+                } else {
+                    console.log('Please enter the GitHub link to your project!');
+                    return false;
+                }
+            }
+        },
+        {
+            type: 'confirm',
+            name: 'feature',
+            message: 'Would you like to feature this project?',
+            default: false
+        },
+        {
+            type: 'confirm',
+            name: 'confirmAddProject',
+            message: 'Would you like to enter another project?',
+            default: false
+        }
+    ])
+        .then(projectData => {
+            portfolioData.projects.push(projectData);
+            if (projectData.confirmAddProject) {
+                return promptProject(portfolioData);
+            } else {
+                return portfolioData;
+            }
+        });
+};
 
-// EXAMPLES FROM LESSON 9.1
-
-// function that takes input and displays output
-// const printProfileData = profileDataArr => {
-//     for (let i = 0; i < profileDataArr.length; i += 1) {
-//     console.log(profileDataArr[i]);
-//     }
-
-//     console.log('================')
-
-//     profileDataArr.forEach(profileItem => console.log(profileItem));
-// };
-
-// printProfileData(profileDataArgs);
+promptUser()
+    .then(promptProject)
+    .then(portfolioData => {
+        console.log(portfolioData);
+    });
